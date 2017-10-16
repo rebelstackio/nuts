@@ -1,0 +1,41 @@
+# -*- mode: ruby -*-
+# vi: set ft=ruby :
+
+PORT="6000"
+NODE_VER="7.x"
+
+# server vars
+GUEST_IP = "127.0.0.1"
+HOSTNAME = "updates"
+FQDN = HOSTNAME + ".dealerbuilt.com"
+#server_cpus   = "1"   # Cores
+SERVER_MEMORY = "1048" # MB Normally 512MB, raise this to 2048 to compile plv8
+SERVER_SWAP   = "1048" # Options: false | int (MB) -
+                      # Guideline: Between one or two times the server_memory
+
+$script = <<SCRIPT
+echo I am provisioning...
+date > /etc/vagrant_provisioned_at
+SCRIPT
+
+Vagrant.configure("2") do |config|
+  config.vm.box = "ubuntu/trusty64"
+  config.vm.hostname = HOSTNAME
+  #config.vm.network "private_network", ip: GUEST_IP
+  config.vm.network "forwarded_port", guest: PORT, host: PORT
+  config.vm.provider "virtualbox" do |v|
+    v.memory = SERVER_MEMORY
+    v.customize ["modifyvm", :id, "--memory", SERVER_MEMORY]
+  end
+  config.vm.provision "shell", inline: $script
+  config.vm.synced_folder "../",  "/home/vagrant/nuts", create:true, :mount_options => ['dmode=775', 'fmode=777']
+	config.vm.provision :shell do |s|
+    s.path = "provision.sh"
+    s.env = {
+      "GUEST_IP" => GUEST_IP,
+      "PORT" => PORT,
+      "FQDN" => FQDN,
+      "NODE_VER" => NODE_VER
+    }
+		end
+end
