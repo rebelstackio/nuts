@@ -7,7 +7,7 @@ NODE_VER="7.x"
 # server vars
 GUEST_IP = "127.0.0.1"
 HOSTNAME = "updates"
-FQDN = HOSTNAME + ".dealerbuilt.com"
+FQDN = HOSTNAME + ".yourdomain.com"
 #server_cpus   = "1"   # Cores
 SERVER_MEMORY = "1048" # MB Normally 512MB, raise this to 2048 to compile plv8
 SERVER_SWAP   = "1048" # Options: false | int (MB) -
@@ -22,7 +22,7 @@ Vagrant.configure("2") do |config|
   config.vm.box = "ubuntu/trusty64"
   config.vm.hostname = HOSTNAME
   #config.vm.network "private_network", ip: GUEST_IP
-  config.vm.network "forwarded_port", guest: PORT, host: PORT
+  config.vm.network "forwarded_port", guest: PORT, host: 6001
   config.vm.provider "virtualbox" do |v|
     v.memory = SERVER_MEMORY
     v.customize ["modifyvm", :id, "--memory", SERVER_MEMORY]
