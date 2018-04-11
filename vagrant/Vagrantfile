@@ -11,7 +11,7 @@ FQDN = HOSTNAME + ".yourdomain.com"
 #server_cpus   = "1"   # Cores
 SERVER_MEMORY = "1048" # MB Normally 512MB, raise this to 2048 to compile plv8
 SERVER_SWAP   = "1048" # Options: false | int (MB) -
-                      # Guideline: Between one or two times the server_memory
+											# Guideline: Between one or two times the server_memory
 
 $script = <<SCRIPT
 echo I am provisioning...
@@ -19,23 +19,38 @@ date > /etc/vagrant_provisioned_at
 SCRIPT
 
 Vagrant.configure("2") do |config|
-  config.vm.box = "ubuntu/trusty64"
-  config.vm.hostname = HOSTNAME
-  #config.vm.network "private_network", ip: GUEST_IP
-  config.vm.network "forwarded_port", guest: PORT, host: 6001
-  config.vm.provider "virtualbox" do |v|
-    v.memory = SERVER_MEMORY
-    v.customize ["modifyvm", :id, "--memory", SERVER_MEMORY]
-  end
-  config.vm.provision "shell", inline: $script
-  config.vm.synced_folder "../",  "/home/vagrant/nuts", create:true, :mount_options => ['dmode=775', 'fmode=777']
-	config.vm.provision :shell do |s|
-    s.path = "provision.sh"
-    s.env = {
-      "GUEST_IP" => GUEST_IP,
-      "PORT" => PORT,
-      "FQDN" => FQDN,
-      "NODE_VER" => NODE_VER
-    }
+	config.vm.hostname = HOSTNAME
+	#config.vm.network "private_network", ip: GUEST_IP
+	config.vm.network "forwarded_port", guest: PORT, host: 6001
+
+	config.vm.provider "virtualbox" do |vb, orvb|
+		orvb.vm.box = "ubuntu/trusty64"
+		orvb.vm.synced_folder "../",  "/home/vagrant/nuts", create:true, :mount_options => ['dmode=775', 'fmode=777']
+		vb.memory = SERVER_MEMORY
+		vb.customize ["modifyvm", :id, "--memory", SERVER_MEMORY]
+	end
+
+	config.vm.provider "hyperv" do |hv, orhv|
+		orhv.vm.box = "generic/ubuntu1604"
+		orhv.vm.synced_folder "../", "/home/vagrant/nuts", create:true,
+			type: "rsync", rsync__exclude: ".git/"
+		orhv.vm.network "public_network"
+		hv.memory = SERVER_MEMORY
+		hv.maxmemory = SERVER_MEMORY
+		hv.differencing_disk = true
+		hv.enable_virtualization_extensions = true
+	end
+
+	config.vm.define "testbox", primary:true do |testbox|
+		testbox.vm.provision "shell", inline: $script
+		testbox.vm.provision :shell do |s|
+			s.path = "provision.sh"
+			s.env = {
+				"GUEST_IP" => GUEST_IP,
+				"PORT" => PORT,
+				"FQDN" => FQDN,
+				"NODE_VER" => NODE_VER
+			}
 		end
+	end
 end

@@ -61,6 +61,9 @@ apt-get -y install libssl-dev
 # Tag the provision time:
 date > "$PROVISIONED_ON"
 
+cd ./nuts
+npm install
+
 display "Successfully created postgres dev virtual machine with Postgres"
 echo ""
 print_db_usage
